@@ -36,7 +36,7 @@ class Program
         {
             // Decrypt the file
             DecryptData decryptData = new DecryptData(config);
-            string decryptedFile = decryptData.DecryptFile(inputFile, 0, new byte[4096]);
+            string decryptedFile = decryptData.DecryptFile(inputFile);
             string decryptedFilePath = Path.Combine(outputPath, decryptedFile);
             File.Move(decryptedFile, decryptedFilePath);
             Console.WriteLine($"File decrypted to: {decryptedFilePath}");

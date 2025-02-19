@@ -8,7 +8,7 @@ using CryptoSoft.Models;
 
 namespace CryptoSoft.Services
 {
-     class DecryptData
+    class DecryptData
     {
         public CryptoSoftConfig Config { get; set; }
 
@@ -17,9 +17,11 @@ namespace CryptoSoft.Services
             Config = config;
         }
 
-        public string DecryptFile(string filePath ,int bytesRead , byte[] buffer)
+        public string DecryptFile(string filePath)
         {
-            string decryptedFile = "decrypted.txt";
+            string decryptedFile = filePath;
+            int bytesRead = 0;
+            byte[] buffer = new byte[4096]; // Initialize buffer with a size
             using FileStream encryptedFileStream = new FileStream(filePath, FileMode.Open);
             using FileStream decryptedFileStream = new FileStream(decryptedFile, FileMode.Create);
             using CryptoStream decryptStream = new CryptoStream(encryptedFileStream, Config.AesAlg.CreateDecryptor(), CryptoStreamMode.Read);
