@@ -7,7 +7,7 @@ using System.Security.Cryptography;
 
 namespace CryptoSoft.Models
 {
-    class CryptoSoftConfig
+        public class CryptoSoftConfig
     {
         public  Aes AesAlg ;
         public  byte[] EncryptionKey;
