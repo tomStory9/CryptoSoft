@@ -8,7 +8,7 @@ using CryptoSoft.Models;
 
 namespace CryptoSoft.Services
 {
-    class DecryptData
+    public class DecryptData
     {
         public CryptoSoftConfig Config { get; set; }
 
@@ -19,20 +19,27 @@ namespace CryptoSoft.Services
 
         public string DecryptFile(string filePath)
         {
-            string decryptedFile = filePath;
-            int bytesRead = 0;
-            byte[] buffer = new byte[4096]; // Initialize buffer with a size
-            using FileStream encryptedFileStream = new FileStream(filePath, FileMode.Open);
-            using FileStream decryptedFileStream = new FileStream(decryptedFile, FileMode.Create);
+            // Ensure the output file has "_decrypted" suffix to avoid overwriting
+            string directory = Path.GetDirectoryName(filePath);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+            string extension = Path.GetExtension(filePath);
+            string decryptedFile = Path.Combine(directory, fileNameWithoutExtension + "_decrypted" + extension);
+
+            byte[] buffer = new byte[4096]; // Buffer size for reading
+            int bytesRead;
+
+            using FileStream encryptedFileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using FileStream decryptedFileStream = new FileStream(decryptedFile, FileMode.Create, FileAccess.Write, FileShare.None);
             using CryptoStream decryptStream = new CryptoStream(encryptedFileStream, Config.AesAlg.CreateDecryptor(), CryptoStreamMode.Read);
-            // Decrypt the encrypted file and write the decrypted content
+
+            // Read from the encrypted stream and write to the decrypted file
             while ((bytesRead = decryptStream.Read(buffer, 0, buffer.Length)) > 0)
             {
                 decryptedFileStream.Write(buffer, 0, bytesRead);
             }
-            decryptStream.Close();
 
-            return decryptedFile;
+            return decryptedFile; // Return the new decrypted file path
         }
+
     }
 }

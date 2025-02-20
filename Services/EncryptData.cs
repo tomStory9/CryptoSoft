@@ -1,26 +1,34 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 using CryptoSoft.Models;
+
 namespace CryptoSoft.Services
 {
-    class EncryptData
+    public class EncryptData
     {
         public CryptoSoftConfig Config { get; set; }
 
-        public EncryptData(CryptoSoftConfig config) {
+        public EncryptData(CryptoSoftConfig config)
+        {
             Config = config;
         }
 
-        public (string EncryptedFile,byte[] buffer, int bytesRead) EncryptFile(string filePath)
+        public (string EncryptedFile, byte[] buffer, int bytesRead) EncryptFile(string filePath)
         {
             using FileStream inputFileStream = new FileStream(filePath, FileMode.Open);
-            string encryptedfile = filePath + "_encrypted"+".txt";
+
+            // Get the directory, filename without extension, and extension
+            string directory = Path.GetDirectoryName(filePath);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+            string extension = Path.GetExtension(filePath);
+
+            // Construct the new encrypted file path
+            string encryptedfile = Path.Combine(directory, fileNameWithoutExtension + "_encrypted" + extension);
+
             using FileStream outputFileStream = new FileStream(encryptedfile, FileMode.Create);
             using CryptoStream cryptoStream = new CryptoStream(outputFileStream, Config.AesAlg.CreateEncryptor(), CryptoStreamMode.Write);
+
             // Read the input file and encrypt it
             int bytesRead;
             byte[] buffer = new byte[4096];
@@ -30,9 +38,7 @@ namespace CryptoSoft.Services
             }
             cryptoStream.Close();
 
-            return (encryptedfile, buffer,bytesRead);
+            return (encryptedfile, buffer, bytesRead);
         }
-
-
     }
 }
