@@ -1,38 +1,57 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using CryptoSoft.Models;
+
 namespace CryptoSoft.Services
 {
     class EncryptData
     {
         public CryptoSoftConfig Config { get; set; }
 
-        public EncryptData(CryptoSoftConfig config) {
+        public EncryptData(CryptoSoftConfig config)
+        {
             Config = config;
         }
 
-        public (string EncryptedFile,byte[] buffer, int bytesRead) EncryptFile(string filePath)
+        public string EncryptFile(string filePath)
         {
-            using FileStream inputFileStream = new FileStream(filePath, FileMode.Open);
-            string encryptedfile = filePath + "_encrypted"+".txt";
-            using FileStream outputFileStream = new FileStream(encryptedfile, FileMode.Create);
-            using CryptoStream cryptoStream = new CryptoStream(outputFileStream, Config.AesAlg.CreateEncryptor(), CryptoStreamMode.Write);
-            // Read the input file and encrypt it
-            int bytesRead;
-            byte[] buffer = new byte[4096];
-            while ((bytesRead = inputFileStream.Read(buffer, 0, buffer.Length)) > 0)
+            string encryptedfile = filePath + ".encrypted";
+            string mutexName = $"Global\\{Path.GetFileName(filePath)}_mutex";
+
+            using (Mutex mutex = new Mutex(false, mutexName))
             {
-                cryptoStream.Write(buffer, 0, bytesRead);
+                try
+                {
+                    mutex.WaitOne();
+
+                    using (FileStream inputFileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (FileStream outputFileStream = new FileStream(encryptedfile, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        // Write the IV at the beginning of the encrypted file
+                        outputFileStream.Write(Config.IV, 0, Config.IV.Length);
+
+                        using (CryptoStream cryptoStream = new CryptoStream(outputFileStream, Config.AesAlg.CreateEncryptor(), CryptoStreamMode.Write))
+                        {
+                            // Read the input file and encrypt it
+                            byte[] buffer = new byte[4096];
+                            int bytesRead;
+                            while ((bytesRead = inputFileStream.Read(buffer, 0, buffer.Length)) > 0)
+                            {
+                                cryptoStream.Write(buffer, 0, bytesRead);
+                            }
+                            cryptoStream.FlushFinalBlock();
+                        }
+                    }
+                }
+                finally
+                {
+                    mutex.ReleaseMutex();
+                }
             }
-            cryptoStream.Close();
 
-            return (encryptedfile, buffer,bytesRead);
+            return encryptedfile;
         }
-
-
     }
 }
